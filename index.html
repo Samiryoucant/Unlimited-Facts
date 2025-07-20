@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unlimited Facts - Discover Everything</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+        .fact-card {
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .fact-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .category-btn {
+            transition: all 0.3s ease;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+        }
+        .category-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+        }
+        .category-btn.active {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.1);
+        }
+        .gradient-bg {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .fact-number {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-5xl md:text-7xl font-bold mb-4 float-animation">
+                <i class="fas fa-infinity mr-4"></i>
+                Unlimited Facts
+            </h1>
+            <p class="text-xl md:text-2xl opacity-90">Discover fascinating facts about everything</p>
+        </header>
+
+        <!-- Search Bar -->
+        <div class="max-w-2xl mx-auto mb-8">
+            <div class="relative">
+                <input type="text" 
+                       id="searchInput" 
+                       placeholder="Search facts..." 
+                       class="w-full px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-white/50">
+                <button class="absolute right-4 top-1/2 transform -translate-y-1/2">
+                    <i class="fas fa-search text-white/70"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="flex flex-wrap justify-center gap-4 mb-8">
+            <button class="category-btn active px-6 py-3 rounded-full text-sm md:text-base" data-category="all">
+                <i class="fas fa-globe mr-2"></i>All
+            </button>
+            <button class="category-btn px-6 py-3 rounded-full text-sm md:text-base" data-category="space">
+                <i class="fas fa-rocket mr-2"></i>Space
+            </button>
+            <button class="category-btn px-6 py-3 rounded-full text-sm md:text-base" data-category="animals">
+                <i class="fas fa-paw mr-2"></i>Animals
+            </button>
+            <button class="category-btn px-6 py-3 rounded-full text-sm md:text-base" data-category="science">
+                <i class="fas fa-flask mr-2"></i>Science
+            </button>
+            <button class="category-btn px-6 py-3 rounded-full text-sm md:text-base" data-category="history">
+                <i class="fas fa-landmark mr-2"></i>History
+            </button>
+            <button class="category-btn px-6 py-3 rounded-full text-sm md:text-base" data-category="technology">
+                <i class="fas fa-microchip mr-2"></i>Technology
+            </button>
+        </div>
+
+        <!-- Facts Grid -->
+        <div id="factsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Facts will be dynamically loaded here -->
+        </div>
+
+        <!-- Load More Button -->
+        <div class="text-center mt-12">
+            <button id="loadMore" class="px-8 py-4 bg-white/20 backdrop-blur-md rounded-full hover:bg-white/30 transition-all duration-300">
+                <i class="fas fa-plus mr-2"></i>Load More Facts
+            </button>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <button id="randomFactBtn" class="fixed bottom-8 right-8 w-16 h-16 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center hover:bg-white/30 transition-all duration-300 shadow-lg">
+        <i class="fas fa-random text-2xl"></i>
+    </button>
+
+    <!-- Modal for Random Fact -->
+    <div id="factModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white/10 backdrop-blur-md rounded-2xl p-8 max-w-md mx-4">
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">Random Fact!</h3>
+                <p id="modalFact" class="text-lg mb-6"></p>
+                <button onclick="closeModal()" class="px-6 py-2 bg-white/20 rounded-full hover:bg-white/30 transition-all">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Facts database
+        const facts = {
+            space: [
+                { text: "A day on Venus is longer than a year on Venus", source: "NASA" },
+                { text: "Neptune's winds can reach speeds of 1,200 mph", source: "Space.com" },
+                { text: "The Sun makes up 99.86% of the Solar System's mass", source: "Scientific American" },
+                { text: "There are more stars in the universe than grains of sand on Earth", source: "Astronomy Magazine" },
+                { text: "Saturn's density is so low it would float in water", source: "NASA" },
+                { text: "Black holes can spin at nearly the speed of light", source: "Physics Today" }
+            ],
+            animals: [
+                { text: "Octopuses have three hearts and blue blood", source: "National Geographic" },
+                { text: "A shrimp's heart is in its head", source: "Ocean Conservation" },
+                { text: "Elephants can detect rain 150 miles away", source: "Wildlife Conservation" },
+                { text: "Cows have best friends and get stressed when separated", source: "Animal Behavior Journal" },
+                { text: "Penguins propose with pebbles", source: "Antarctic Research" },
+                { text: "Butterflies taste with their feet", source: "Entomology Today" }
+            ],
+            science: [
+                { text: "Atoms are 99.9999999% empty space", source: "Physics World" },
+                { text: "Bananas are naturally radioactive", source: "Radiology Today" },
+                { text: "Water can boil and freeze at the same time", source: "Scientific American" },
+                { text: "Light takes 8 minutes 20 seconds to travel from Sun to Earth", source: "NASA" },
+                { text: "Helium can work against gravity at -271°C", source: "Nature Physics" },
+                { text: "A teaspoon of neutron star would weigh 6 billion tons", source: "Astrophysics Journal" }
+            ],
+            history: [
+                { text: "Cleopatra lived closer to the invention of the iPhone than to the building of the pyramids", source: "History Channel" },
+                { text: "Oxford University is older than the Aztec Empire", source: "BBC History" },
+                { text: "The last guillotine execution in France was the same year Star Wars came out", source: "Smithsonian" },
+                { text: "Woolly mammoths were still alive when the pyramids were being built", source: "National Geographic" },
+                { text: "The fax machine was invented in 1843", source: "Technology History" },
+                { text: "Nintendo was founded when Jack the Ripper was still active", source: "Gaming History" }
+            ],
+            technology: [
+                { text: "The first computer bug was an actual bug - a moth", source: "Computer History Museum" },
+                { text: "The first domain name ever registered was Symbolics.com", source: "Internet Archive" },
+                { text: "The original name of Windows was Interface Manager", source: "Microsoft Archives" },
+                { text: "The first 1GB hard drive weighed 550 pounds", source: "Digital History" },
+                { text: "The first emoticon was :-) in 1982", source: "Tech Crunch" },
+                { text: "The first computer virus was created in 1983", source: "Cybersecurity Journal" }
+            ]
+        };
+
+        let currentCategory = 'all';
+        let displayedFacts = new Set();
+        let factCounter = 0;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFacts();
+            setupEventListeners();
+        });
+
+        function setupEventListeners() {
+            // Category buttons
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentCategory = e.target.dataset.category;
+                    displayedFacts.clear();
+                    factCounter = 0;
+                    loadFacts();
+                });
+            });
+
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                filterFacts(searchTerm);
+            });
+
+            // Load more button
+            document.getElementById('loadMore').addEventListener('click', loadFacts);
+
+            // Random fact button
+            document.getElementById('randomFactBtn').addEventListener('click', showRandomFact);
+        }
+
+        function loadFacts() {
+            const container = document.getElementById('factsContainer');
+            const factsToShow = getFactsToShow();
+            
+            if (displayedFacts.size === 0) {
+                container.innerHTML = '';
+            }
+
+            factsToShow.forEach(fact => {
+                if (!displayedFacts.has(fact.text)) {
+                    factCounter++;
+                    const card = createFactCard(fact, factCounter);
+                    container.appendChild(card);
+                    displayedFacts.add(fact.text);
+                }
+            });
+        }
+
+        function getFactsToShow() {
+            let factsToShow = [];
+            
+            if (currentCategory === 'all') {
+                Object.values(facts).forEach(categoryFacts => {
+                    factsToShow = factsToShow.concat(categoryFacts);
+                });
+            } else {
+                factsToShow = facts[currentCategory] || [];
+            }
+
+            return factsToShow.slice(0, Math.min(displayedFacts.size + 9, factsToShow.length));
+        }
+
+        function createFactCard(fact, index) {
+            const card = document.createElement('div');
+            card.className = 'fact-card rounded-2xl p-6 cursor-pointer';
+            card.innerHTML = `
+                <div class="fact-number text-3xl font-bold mb-2">#${index}</div>
+                <p class="text-lg mb-4 leading-relaxed">${fact.text}</p>
+                <div class="text-sm opacity-70">
+                    <i class="fas fa-bookmark mr-2"></i>${fact.source}
+                </div>
+            `;
+            
+            card.addEventListener('click', () => {
+                card.classList.add('transform', 'scale-105');
+                setTimeout(() => card.classList.remove('transform', 'scale-105'), 200);
+            });
+
+            return card;
+        }
+
+        function filterFacts(searchTerm) {
+            const container = document.getElementById('factsContainer');
+            container.innerHTML = '';
+            
+            let factsToShow = [];
+            if (currentCategory === 'all') {
+                Object.values(facts).forEach(categoryFacts => {
+                    factsToShow = factsToShow.concat(categoryFacts);
+                });
+            } else {
+                factsToShow = facts[currentCategory] || [];
+            }
+
+            const filteredFacts = factsToShow.filter(fact => 
+                fact.text.toLowerCase().includes(searchTerm)
+            );
+
+            filteredFacts.forEach((fact, index) => {
+                const card = createFactCard(fact, index + 1);
+                container.appendChild(card);
+            });
+        }
+
+        function showRandomFact() {
+            const modal = document.getElementById('factModal');
+            const modalFact = document.getElementById('modalFact');
+            
+            let allFacts = [];
+            Object.values(facts).forEach(categoryFacts => {
+                allFacts = allFacts.concat(categoryFacts);
+            });
+            
+            const randomFact = allFacts[Math.floor(Math.random() * allFacts.length)];
+            modalFact.textContent = randomFact.text;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('factModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    </script>
+</body>
+</html>
